@@ -1,0 +1,902 @@
+---
+title: "ML student R"
+author: "Enrique Rodríguez Morón"
+date: "26 Noviembre 2017"
+output: html_document
+---
+
+# <span style="text-decoration: underline; font-weight: bold;">Introducción</span> {#introduccion}
+
+El [dataset](https://archive.ics.uci.edu/ml/machine-learning-databases/00320/student.zip)[^1] que se va a utilizar contiene los datos de las calificaciones de alumnos de educación secundaria en 2 escuelas portuguesas. Dentro del zip que se descarga, hay dos ficheros con datos correspondiente a la asignatura de matemáticas (student-mat.csv) y portugués (student-por.csv). 
+
+A parte de las calificaciones obtenidas se tienen una serie de atributos por cada alumno, como puede ser edad, escuela o tiempo dedicado a salir con los amigos. [Aqui](https://archive.ics.uci.edu/ml/datasets/Student+Performance)[^2] se puede obtener una descripción detallada de todos los atributos. Como alternativa, a continuación se puede consultar estos atributos:
+
+<a onclick="var div = document.getElementById('attributosintroduccion'); if (div.style.display === 'none') {div.style.display = 'block'; this.innerHTML='Ocultar atributos';} else {div.style.display = 'none'; this.innerHTML='Mostrar atributos';}" href="#" id="linkattributosintroduccion">Mostrar atributos</a>
+
+<div id="attributosintroduccion" style="display:none;">
+
+1 school - student's school (binary: "GP" - Gabriel Pereira or "MS" - Mousinho da Silveira)
+
+2 sex - student's sex (binary: "F" - female or "M" - male)
+
+3 age - student's age (numeric: from 15 to 22)
+
+4 address - student's home address type (binary: "U" - urban or "R" - rural)
+
+5 famsize - family size (binary: "LE3" - less or equal to 3 or "GT3" - greater than 3)
+
+6 Pstatus - parent's cohabitation status (binary: "T" - living together or "A" - apart)
+
+7 Medu - mother's education (numeric: 0 - none,  1 - primary education (4th grade), 2 - 5th to 9th grade, 3 - secondary education or 4 - higher education)
+
+8 Fedu - father's education (numeric: 0 - none,  1 - primary education (4th grade), 2 - 5th to 9th grade, 3 - secondary education or 4 - higher education)
+
+9 Mjob - mother's job (nominal: "teacher", "health" care related, civil "services" (e.g. administrative or police), "at_home" or "other")
+
+10 Fjob - father's job (nominal: "teacher", "health" care related, civil "services" (e.g. administrative or police), "at_home" or "other")
+
+11 reason - reason to choose this school (nominal: close to "home", school "reputation", "course" preference or "other")
+
+12 guardian - student's guardian (nominal: "mother", "father" or "other")
+
+13 traveltime - home to school travel time (numeric: 1 - <15 min., 2 - 15 to 30 min., 3 - 30 min. to 1 hour, or 4 - >1 hour)
+
+14 studytime - weekly study time (numeric: 1 - <2 hours, 2 - 2 to 5 hours, 3 - 5 to 10 hours, or 4 - >10 hours)
+
+15 failures - number of past class failures (numeric: n if 1<=n<3, else 4)
+
+16 schoolsup - extra educational support (binary: yes or no)
+
+17 famsup - family educational support (binary: yes or no)
+
+18 paid - extra paid classes within the course subject (Math or Portuguése) (binary: yes or no)
+
+19 activities - extra-curricular activities (binary: yes or no)
+
+20 nursery - attended nursery school (binary: yes or no)
+
+21 higher - wants to take higher education (binary: yes or no)
+
+22 internet - Internet access at home (binary: yes or no)
+
+23 romantic - with a romantic relationship (binary: yes or no)
+
+24 famrel - quality of family relationships (numeric: from 1 - very bad to 5 - excellent)
+
+25 freetime - free time after school (numeric: from 1 - very low to 5 - very high)
+
+26 goout - going out with friends (numeric: from 1 - very low to 5 - very high)
+
+27 Dalc - workday alcohol consumption (numeric: from 1 - very low to 5 - very high)
+
+28 Walc - weekend alcohol consumption (numeric: from 1 - very low to 5 - very high)
+
+29 health - current health status (numeric: from 1 - very bad to 5 - very good)
+
+30 absences - number of school absences (numeric: from 0 to 93)
+
+
+These grades are related with the course subject, Math or Portuguése:
+31 G1 - first period grade (numeric: from 0 to 20)
+
+31 G2 - second period grade (numeric: from 0 to 20)
+
+32 G3 - final grade (numeric: from 0 to 20, output target)
+
+
+Additional note: there are several (382) students that belong to both datasets . These students can be identified by searching for identical attributes that characterize each student, as shown in the annexed R file.
+</div>
+
+El objetivo de esta tarea será el de predecir la nota final (G3) de cada asignatura (matemáticas y portugués) por separado a partir de los atributos de un alumno. Para ello:
+
+1. [Se descargarán los datos](#carga)
+2. [Se hará un analisis descriptivo](#analisisdescriptivo)
+3. [Se hará un análisis exploratorio usando algún método no supervisado](#nosupervisados)
+4. [Se seleccionarán las variables, se construirán 2 modelos supervisados](#supervisados)
+5. [Se evaluará y se compararán los anteriores modelos](#evaluacion)
+
+[^1]: [https://archive.ics.uci.edu/ml/machine-learning-databases/00320/student.zip](https://archive.ics.uci.edu/ml/machine-learning-databases/00320/student.zip)
+
+[^2]: [https://archive.ics.uci.edu/ml/datasets/Student+Performance](https://archive.ics.uci.edu/ml/datasets/Student+Performance)
+
+# <span style="text-decoration: underline; font-weight: bold;">1. Carga de los datos</span> {#carga}
+###### [Ir a la introducción](#introduccion)       [>](#analisisdescriptivo)
+
+[1.1. Instalación de las librerías](#librerias)    [1.2. Creación de directorios y carga de los datos](#directorios)
+
+
+## 1.1. Instalación de las librerías {#librerias}
+###### [\^](#carga)
+
+Antes de nada se tienen que instalar las librerías que se van a utilizar si no estuviesen ya instaladas y luego cargarlas. Además se borran todos los objetos que se tengan cargados.
+
+```{r librerias, echo = FALSE, message=FALSE, warning = FALSE, error = FALSE}
+if (! "stringr" %in% installed.packages()) {
+  install.packages("stringr", dependencies=TRUE)
+}
+if (! "ggplot2" %in% installed.packages()) {
+  install.packages("ggplot2", dependencies=TRUE)
+}
+if (! "dplyr" %in% installed.packages()) {
+  install.packages("dplyr", dependencies=TRUE)
+}
+if (! "dplyr" %in% installed.packages()) {
+  install.packages("dplyr", dependencies=TRUE)
+}
+if (! "knitr" %in% installed.packages()) {
+  install.packages("knitr", dependencies=TRUE)
+}
+if (! "corrplot" %in% installed.packages()) {
+  install.packages("corrplot", dependencies=TRUE)
+}
+if (! "caret" %in% installed.packages()) {
+  install.packages("caret", dependencies=TRUE)
+}
+if (! "pls" %in% installed.packages()) {
+  install.packages("pls", dependencies=TRUE)
+}
+library(stringr)
+library(ggplot2)
+library(dplyr)
+library(knitr)
+library(corrplot)
+library(caret)
+library(pls)
+
+rm(list = ls())
+```
+
+## 1.2. Creación de directorios y carga de los datos {#directorios}
+###### [\^](#carga)
+
+El siguiente paso es crear los directorios donde se guardarán los datos.
+
+```{r variablesydirectorios}
+# Nombre del directorio y los subdirectorios donde se guardaran los ficheros
+mainFolderName <- "directorioPrincipal"
+folderOriginalData <- "original data"
+# URL para descargar el fichero
+fileURL <- "https://archive.ics.uci.edu/ml/machine-learning-databases/00320/student.zip"
+# Nombre del fichero. Despues se unira a la fecha para obtener el nombre completo
+originalFileNameOriginal <- "student"
+# Se obtiene la fecha con formato yyyy-mm-dd_hh-mm-ss
+downloadDateString <- format(Sys.time(),"%Y-%m-%d_%H-%M-%S")
+
+# Se crea un directorio para el input y el output
+if (!file.exists(mainFolderName)) { 
+  dir.create(mainFolderName)
+}
+# Se crea el subdirecto donde estaran los datos brutos ("messy dataset")
+if (!file.exists(paste0(mainFolderName, "/", folderOriginalData))) { 
+  dir.create(paste0(mainFolderName, "/", folderOriginalData))
+}
+if (!file.exists(paste0(mainFolderName, "/", folderOriginalData, "/", downloadDateString))) { 
+  dir.create(paste0(mainFolderName, "/", folderOriginalData, "/", downloadDateString))
+}
+
+# Descarga
+folderNameInput <- paste0(mainFolderName, "/", folderOriginalData, "/", downloadDateString)
+folderFileNameInput <- paste0(folderNameInput, "/", originalFileNameOriginal, "_", 
+                              downloadDateString, ".zip")
+download.file(fileURL, destfile = folderFileNameInput)
+unzip(folderFileNameInput, exdir = folderNameInput)
+```
+
+Se cargan los datos en dos data frames: uno para matemáticas y otro para portugués.
+
+```{r cargadatos}
+studentMat <- read.table(paste0(folderNameInput, "/student-mat.csv"), sep=";", header=TRUE)
+studentPor <- read.table(paste0(folderNameInput, "/student-por.csv"), sep=";", header=TRUE)
+```
+
+
+# <span style="text-decoration: underline; font-weight: bold;">2. Análisis descriptivo</span> {#analisisdescriptivo}
+###### [Ir a la introducción](#introduccion)       [<](#carga)       [>](#nosupervisados)
+
+[2.1. Dimensión y estudio de NAs](#dimension)    [2.2. Análisis y descripción general de los atributos con summary e histogramas](#summary)    [2.3. Análisis absences](#absences)    [2.4. Análisis de los atributos frente al target](#atributosvstarget)    [2.5. Correlación atributos numéricos](#correlacion)
+
+
+## 2.1. Dimensión y estudio de NAs {#dimension}
+###### [\^](#analisisdescriptivo)
+
+Lo primero es ver la dimensión de cada fichero:
+
+* Matemáticas
+    + `r dim(studentMat)[1]` filas, es decir número de alumnos en matemáticas
+    + `r dim(studentMat)[2]` columnas, es decir número de atributos
+  
+* Portugués
+    + `r dim(studentPor)[1]` filas, es decir número de alumnos en portugués
+    + `r dim(studentPor)[2]` columnas, es decir número de atributos
+
+El número de atributos es igual en los dos ficheros y estos son iguales que los comentados en la [introducción](#introduccion) (se puede comprobar con la funcion `colnames()`). En cambio el número de alumnos es bastante mayor en el archivo de portugués que en el de matemáticas, exactamente `r dim(studentPor)[1]/dim(studentMat)[1]` veces.
+
+En segundo lugar comprobamos los NAs que hay en los ficheros:
+
+* Matemáticas
+    + `r dim(studentMat[rowSums(is.na(studentMat))>0,])[1]` filas con NAs
+    + `r dim(studentMat[colSums(is.na(studentMat))>0])[2]` columnas con NAs
+  
+* Portugués
+    + `r dim(studentPor[rowSums(is.na(studentPor))>0,])[1]` filas con NAs
+    + `r dim(studentPor[colSums(is.na(studentPor))>0])[2]` columnas con NAs
+
+Es decir no hay NAs en ninguno de los ficheros.
+
+```{r colnames, echo = FALSE, message=FALSE, warning = FALSE, error = FALSE}
+colNameFactor <- c("school", "sex", "address", "famsize", "Pstatus", "Mjob", "Fjob", "reason", "guardian", "schoolsup", "famsup", "paid", "activities", "nursery", "higher", "internet", "romantic")
+colNameNumericNoCategory <- c("age", "absences", "G1", "G2", "G3")
+colNameNumericCategory <- c("Medu", "Fedu", "traveltime", "studytime", "failures", "famrel", "freetime", "goout", "Dalc", "Walc", "health")
+```
+
+## 2.2. Análisis y descripción general de los atributos con summary e histogramas {#summary}
+###### [\^](#analisisdescriptivo)
+
+Hay que destacar que, a partir de la descripción de las variables que se ha visto en la [introductión](#introduccion), hay tres grupos de variables que se tiene que tener en cuenta:
+
+* Solo `r length(colNameNumericNoCategory)` atributos son puramente numéricos: `r colNameNumericNoCategory`
+* Hay `r length(colNameNumericCategory)` atributos que son considerados numéricos discretos pero en realidad son categóricos ordenados de menor a mayor. Por ejemplo 'health' tiene un valor de 1 a 5 siendo 1 muy mala y 5 muy bueno. Estos atributos son : `r colNameNumericCategory`
+* Por último hay `r length(colNameFactor)` atributos categóricos que no tiene sentido convertirlos a numérico ya que no hay relación alguna entre los valores posibles. Estos atributos son : `r colNameFactor`
+
+El siguiente paso es ver cómo se distribuyen los datos en todos los atributos:
+
+```{r summary, echo = FALSE, message=FALSE, warning = FALSE, error = FALSE}
+kable(summary(studentMat), caption = "Summary estudiantes matemáticas")
+kable(summary(studentPor), caption = "Summary estudiantes portugués")
+```
+
+Analizando los datos, se puede ver:
+
+* En **school** la escuela predominante es 'GP' en ambos ficheros, siendo casi el doble en portugués y más de 7 veces en matemáticas.
+* En **sex** tanto femenino como masculino están casi a la par en matemáticas pero en portugués hay una diferencia considerable a favor del femenino.
+* En **address** los alumnos que viven en zonas urbanas ('U') son mucho más numerosos que los que viven en zonas rurales ('R').
+* La gran mayoría de los padres viven juntos ('T') en **Pstatus**.
+* La educación de la madre **Medu** y del padre **Fedu** son muy parecidos, siendo ligeramente superior la primera. En ambos la media y la mediana está entre '5th to 9th grade' (2) y 'secondary education' (3).
+* Resulta chocante que la educación de la madre sea algo superior a la del padre y que haya más madres trabajando en casa ('at_home') **Mjob** que padres **Pjob**. No obstante, las dos profesiones más predominantes en ambos sexos son 'other' y 'services'.
+* Tanto la media como la mediana en **traveltime** nos dice que se destina entre 1 y 30 minutos en llegar a la escuela.
+* Por su parte, en ambos ficheros el tiempo destinado para el estudio **studytime** es de '2 to 5 hours' por semana.
+* La gran mayoría de los estudiantes (en matemáticas corresponde al `r (studentMat %>% filter(failures==0) %>% count() %>% select(n))$n / dim(studentMat)[1] * 100`% y en portugués al `r (studentPor %>% filter(failures==0) %>% count() %>% select(n))$n / dim(studentPor)[1] * 100`%) no han suspendido ninguna asignatura como se puede observar en **failures**.
+* La gran mayoría no tiene soporte extra a la escuela **schoolsup** pero si que obtienen ayuda de la familia **famsup**.
+* Resulta curioso que casi la mitad de los alumnos vayan a clases extra de matemáticas pero la muchos no vayan a clases extra de portugués **paid**, pero la nota media de la primera (10.42) es inferior a la segunda (11.91).
+* Prácticamente la mitad de los alumnos van a actividades **activities**.
+* La gran mayoría quieren cursar estudios superiores al actual **higher**. Dato importante ya que muchas veces el querer hace más que el poder.
+* Hoy en día el acceso a internet está al alcance de prácticamente todas las personas por lo que resulta interesante ver que parte de los alumnos no tienen acceso a internet **internet** (en matemáticas corresponde al `r (studentMat %>% filter(internet=='no') %>% count() %>% select(n))$n / dim(studentMat)[1] * 100`% y en portugués al `r (studentPor %>% filter(internet=='no') %>% count() %>% select(n))$n / dim(studentPor)[1] * 100`%). Este dato es también muy importante y puede influenciar en la nota final ya que Internet se ha convertido en el mejor sitio donde buscar información. Nótese que el número de los alumnos sin internet es un poco inferior a los que viven en sitios rurales ('address').
+* Respecto al tiempo libre que se dispone después del colegio **freetime** se tiene que tanto la media como la mediana es 'normal' (3), por lo que se tiene tiempo para poder estudiar. No obstante, tiempo que se dedica a salir con los amigos **goout** es también 'normal' (3), por lo que el tiempo libre se puede estar dedicando a salir con los amigos.
+* El número medio y mediana de ausencias **absences** es algo superior en matemáticas que en portugués, aunque en ambos casos el número es pequeño: entre 4 y 6 en matemáticas y entre 2 y 4 en portugués. Nótese que el número máximo de ausencias es 75 y 32 respectivamente, por lo que seguro que habrá outliers.
+* Respecto a las notas **G1**, **G2** y **G3** se observa que hay algún cero. Estos datos no serán descartados a priori ya que es posible que un alumno consiga esta calificación.
+
+A continuación se ha creado una función que crea histogramas de todos los atributos de los dataset. De esta forma se observa visualmente lo que se acaba de describir. Para facilitar la lectura, no se han insertado estos histogramas en el informe pero se han utilizado como complemento a summary.
+
+```{r histogramas, echo = TRUE, eval = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+DrawHistogramAllColumns <- function (dataframe, datasettitle="") {
+  if (is.data.frame(dataframe)) {
+    lapply(colnames(dataframe), function (colName) {
+      # Se diferencia entre si la entrada es numerica o factor. Actualemente, independientemente se llama a la misma funcion pero en el futuro se podria querer distintos graficos en funcion del tipo de variable
+      if (is.numeric(dataframe[, colName])) {
+        qplot(dataframe[, colName], main = paste0("Fig Histograma ", colName, " ", datasettitle), xlab = colName)
+      } else if (is.factor(dataframe[, colName])) {
+        qplot(dataframe[, colName], main = paste0("Fig Histograma ", colName, " ", datasettitle), xlab = colName)
+      }
+      
+    } )
+  }
+}
+
+DrawHistogramAllColumns(studentMat, datasettitle="matemáticas")
+DrawHistogramAllColumns(studentMat, datasettitle="portugués")
+```
+
+## 2.3. Análisis absences {#absences}
+###### [\^](#analisisdescriptivo)
+
+Para ver los outliers de absences, se representan en un boxplot.
+
+```{r analisisabsences, eval = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+GetIqrLimit <- function (column) {
+  1.5 * IQR(column)
+}
+
+# Se obtienen los valores del Q1 y Q3, además del valor que hay que restar y sumar a Q1 y Q3 respectivamente para considerarlo outlier 
+quantilesStudentMatAbsences <- quantile(studentMat$absences, probs=c(.25, .75))
+iqrStudentMatAbsences <- GetIqrLimit(studentMat$absences)
+boxplot(studentMat$absences, main="Boxplot ausencias matemáticas", ylab="Numero de ausencias")
+outliersStudentMatAbsences <- studentMat %>% filter(absences < (quantilesStudentMatAbsences[1] - iqrStudentMatAbsences) | absences > (quantilesStudentMatAbsences[2] + iqrStudentMatAbsences))
+outliersStudentMatAbsences
+
+quantilesStudentPorAbsences <- quantile(studentPor$absences, probs=c(.25, .75))
+iqrStudentPorAbsences <- GetIqrLimit(studentPor$absences)
+boxplot(studentPor$absences, main="Boxplot ausencias portugués", ylab="Numero de ausencias")
+outliersStudentPorAbsences <- studentPor %>% filter(absences < (quantilesStudentPorAbsences[1] - iqrStudentPorAbsences) | absences > (quantilesStudentPorAbsences[2] + iqrStudentPorAbsences))
+outliersStudentPorAbsences
+```
+
+Para ver si eliminamos o lo sustituimos por otro valor como puede ser la media, se va a mostrar como influye absences en la nota final:
+
+```{r analisisabsencesnotafinal, echo = FALSE, message=FALSE, warning = FALSE, error = FALSE}
+ggplot(studentMat, aes(G3, absences)) + 
+  geom_point() + 
+  ggtitle("Fig Relación absences y nota final matemáticas")
+#ggplot(studentPor, aes(G3, absences)) + 
+#  geom_point(aes(size = qsec)) + 
+#  gtitle("Fig Relación absences y nota final portugués")
+```
+
+Primeramente se puede ver que no hay mucha relación entre la nota final (G3) y absences. Por esta misma razon, se decide mantener los outliers ya que parecen que no son errores de entrada. Lo deseable sería conocer cuantos días totales había clase y, a partir de aquí, ver si es factible el tener ese número de ausencias.
+
+## 2.4. Análisis de los atributos frente al target {#atributosvstarget}
+###### [\^](#analisisdescriptivo)
+
+La siguiente función permite comparar los atributos frente a la variable target G3 construyendo histogramas o geompoint para variables numéricas y diagrama de barras para los factores. Como se ha hecho anteriormente, las gráficas no son incluidas pero se han utilizado para sacar conclusiones, siendo las mismas para matemáticas y portugués a no ser que se diga lo contrario:
+
+```{r, echo = TRUE, message = FALSE, warning = FALSE, error = FALSE}
+# Functión que a partir de un dataframe y la columna target, crea histogramas or diagrama de puntos (geompointForNumeric false para el primero y true para el segundo) para atributos continous frente al target o diagrama de barras si el atributo es un factor.
+DrawNumericplotFactorhistogramAgainstargetAllColumns <- function (dataframe, columnnametarget, datasettitle = "", geompointForNumeric = FALSE) {
+  if (is.data.frame(dataframe)) {
+    
+    lapply(colnames(dataframe), function (colName) {
+      if (colName != columnnametarget) {
+        if (is.numeric(dataframe[, colName])) {
+          if (geompointForNumeric) {
+            ggplot(dataframe, aes_string(x = colName, y = columnnametarget)) + 
+              geom_point() + 
+              ggtitle(paste0("Fig Geom point ", colName, " con el target ", columnnametarget, " en ", datasettitle))
+          } else {
+            ggplot(dataframe, aes_string(x = colName)) + 
+              geom_histogram(bfill = "white", colour = "black") +
+              facet_grid(as.formula(paste0(columnnametarget, " ~ ", colName))) +
+              ggtitle(paste0("Fig Histogramas ", colName, " con el target ", columnnametarget, " en ", datasettitle)) + 
+              xlab(colName) +
+              ylab(columnnametarget)
+          }
+        } else if (is.factor(dataframe[, colName])) {
+          ggplot(dataframe, aes_string(x = columnnametarget)) + 
+            geom_bar() +
+            facet_wrap(as.formula(paste0(" ~ ", colName))) +
+            ggtitle(paste0("Fig Diagrama barras ", colName, " con el target ", columnnametarget, " en ", datasettitle)) + 
+            xlab(columnnametarget) +
+            ylab(colName)
+          # geom_bar(aes(y = (..count..)/sum(..count..))) +
+          # ylab("Porcentaje")
+        }
+      }
+    } )
+  }
+}
+```
+```{r, echo = TRUE, eval = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+DrawNumericplotFactorhistogramAgainstargetAllColumns(studentMat, "G3", datasettitle="matemáticas")
+DrawNumericplotFactorhistogramAgainstargetAllColumns(studentPor, "G3", datasettitle="portugués")
+```
+
+* En matemáticas tanto **G1** como **G2** suelen ser mayores que la propia G3. En cambio en portugués pasa lo contrario.
+* Al contrario de lo que se suponía, **absences** no afecta claramente a la nota final.
+* Se puede pensar que cuanto peor es la salud **health** de un alumno, más necesitara ir a consulta perdiéndose clases, lo que podría afectar a la nota final. Pero los gráficos no muestran este razonamiento.
+* **Dalc** es decir el consumo de alcohol diariamente sí que afecta a G3: cuanto mayor es el consumo, peor son las mejores notas.
+* Ni **freetime** ni **goout** parecen tener relación con G3. Aunque en portugués, aquellos que no salen, sus mejores notas suelen ser peores.
+* Una buena relación familiar **famrel** suele convertirse en una mejor nota en matemáticas pero no en portugués.
+* Si el alumno dispone de **internet** su nota suele ser ligeramente superior, a diferencia de lo que se creia al principio (tendría gran influencia en la nota).
+* Si el alumno no quiere cursar estudios superiores **higher** sus notas suelen ser bajas.
+* Al contrario de lo que se pensaba, el ir a clases extra **paid** de la asignatura en cuestión, no asegura una mejor nota. Aquí cabe destacar el gran grupo de alumnos que no va a clases de matemáticas y su nota final es un 0.
+* Cuantas más asignaturas se han suspendido **failures** menor son las notas.
+* Interesante ver que el tiempo dedicado al estudio **studytime** no es decisivo para la nota final.
+* El tiempo que puede ser decisivo a la hora de conseguir buenas notas es **traveltime**.
+* Ni la educación de la madre **Fedu** ni del padre **Pedu**, ni si viven juntos o separados **Pstatus** parece afectar a la nota final.
+* Si el alumnos es de sexo masculino **sex** suele tener peores notas en portugués.
+
+El resto de atributos se han analizado pero no se ha sacado ninguna relación con el target.
+
+## 2.5. Correlación atributos numéricos {#correlacion}
+###### [\^](#analisisdescriptivo)
+
+Por último se mostrará la correlación de los atributos numéricos. Para ello, lo primero es obtener una matriz con sólo los atributos de esta clase:
+
+```{r dataframeonlynumeric, echo = TRUE, message = FALSE, warning = FALSE, error = FALSE}
+# Función que dado un dataframe, retorna el tipo de columnas que se le pase por parametro: numericas y/o factores
+GetOnlyNumericOrFactorColumns <- function (dataframe, columnsnumeric=TRUE, columnsfactor=FALSE) {
+  dataframeFiltered <- dataframe
+  
+  if (is.data.frame(dataframe)) {
+    
+    lapply(colnames(dataframe), function (colName) {
+      if (! columnsnumeric && ! columnsfactor) {
+        dataframeFiltered[, colName] <<- NULL
+      } else if (columnsnumeric && columnsfactor) {
+        if(! is.numeric(dataframe[, colName]) && ! is.factor(dataframe[, colName])){
+          dataframeFiltered[, colName] <<- NULL
+        }
+      } else if (columnsnumeric && ! columnsfactor) {
+        if(! is.numeric(dataframe[, colName])){
+          dataframeFiltered[, colName] <<- NULL
+        }
+      } else if (! columnsnumeric && columnsfactor) {
+        if(! is.factor(dataframe[, colName])){
+          dataframeFiltered[, colName] <<- NULL
+        }
+      } else {
+        dataframeFiltered[, colName] <<- NULL
+      }
+    } )
+    
+    dataframeFiltered
+  }
+}
+
+studentMatOnlyNumeric <- GetOnlyNumericOrFactorColumns(studentMat)
+studentPorOnlyNumeric <- GetOnlyNumericOrFactorColumns(studentPor)
+```
+
+Una vez que se tiene los dataframes con sólo datos numéricos, se crea y se muestra la matriz de correlación:
+
+```{r correlacion, echo = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+matCor <- cor(studentMatOnlyNumeric)
+porCor <- cor(studentPorOnlyNumeric)
+
+col <- colorRampPalette(c("#BB4444", "#EE9988", "#FFFFFF", "#77AADD", "#4477AA"))
+corrplot::corrplot(matCor, method = "shade", shade.col = NA, tl.col = "black", tl.srt = 45, col = col(200), order = "AOE", mar = c(1,0,2,0), line = 1, main = "Fig Correlacion entre los atributos matemáticas")
+corrplot::corrplot(porCor, method = "shade", shade.col = NA, tl.col = "black", tl.srt = 45, col = col(200), order = "AOE", mar = c(1,0,2,0), line = 1, main = "Fig Correlacion entre los atributos portugués")
+```
+
+Por cuestiones visuales, la relación se muestra sólo en color, sin incluir ningún número. Se puede ver que hay una gran correlación entre G1, G2 y G3. A parte de estas, no hay ninguna que tenga una relación tan fuerte con el target. La tercera es failures con un coeficiente -0.39. Si se habla sobre la relación entre variables no target, hay dos grupos diferenciados: 1. consumo de alcohol diario y en fin de semana en matemáticas, 2. educación de la madre y del padre en ambos subsets.
+
+# <span style="text-decoration: underline; font-weight: bold;">3. Análisis exploratorio con modelos NO supervisados</span> {#nosupervisados}
+###### [Ir a la introducción](#introduccion)       [<](#analisisdescriptivo)       [>](#supervisados)
+
+[3.1.  K-means](#kmeans)
+
+
+Para hacer un análisis exploratorio de los datos se va utilizar un cluster k-means con datos numéricos. Después se asignará su cluster a todas las observaciones en el dataset con todos los atributos y se analizarán (incluidos los categóricos).
+
+## 3.1. K-means {#kmeans}
+###### [\^](#nosupervisados)
+
+[3.1.1. Matemáticas](#kmeansmat)    [3.1.2. Portugués](#kmeanspor)
+
+
+Lo primero que se hace es aplicar el método de Elbow para saber el número de clusters óptimo.
+
+```{r conocerk, eval = FALSE, echo = FALSE}
+wss <- (nrow(studentMatOnlyNumeric) - 1) * sum(apply(studentMatOnlyNumeric, 2, var))
+for (i in 2:15) {
+  wss[i] <- sum(kmeans(studentMatOnlyNumeric, centers=i)$withinss)
+}
+plot(1:15, wss, type="b", xlab="Numero de Clusters", ylab="Sumas de cuadrados dentro de los grupos", main="Num de clusters óptimo según Elbow para matemáticas", pch=20, cex=2)
+
+wss <- (nrow(studentPorOnlyNumeric) - 1) * sum(apply(studentPorOnlyNumeric, 2, var))
+for (i in 2:15) {
+  wss[i] <- sum(kmeans(studentPorOnlyNumeric, centers=i)$withinss)
+}
+plot(1:15, wss, type="b", xlab="Numero de Clusters", ylab="Sumas de cuadrados dentro de los grupos", main="Num de clusters óptimo según Elbow para portugués", pch=20, cex=2)
+```
+```{r numerok, eval = TRUE, echo = FALSE}
+numClusterMat <- 5
+numClusterPor <- 4
+```
+
+Se ha elegido ```r numClusterMat``` para el conjunto de matemáticas y ```r numClusterPor``` para portugués. Con ello se construye el modelo y se añade el cluster id a cada observación:
+
+```{r kmeansmat, eval = TRUE, echo = FALSE}
+set.seed(1234)
+kmeansMat <- kmeans(studentMatOnlyNumeric, numClusterMat)
+kmeansMat
+
+# Se añade clusterid al dataset
+studentMat <- studentMat %>% mutate(clusterid = kmeansMat$cluster)
+```
+```{r kmeanspor, eval = TRUE, echo = FALSE}
+set.seed(1234)
+kmeansPor <- kmeans(studentPorOnlyNumeric, numClusterPor)
+kmeansPor
+
+# Se añade clusterid al dataset
+studentPor <- studentPor %>% mutate(clusterid = kmeansPor$cluster)
+```
+
+Una vez obtenidos los clusters y etiquetadas las filas, se representan los valores de todos los atributos frente a cada cluster. De esta forma podríamos obtener alguna relación entre atributos categóricos (que se habían descartado para el cluster por ser de esta clase) y numéricos. Como se ha hecho anteriormente, estos gráficos no se han incluido en el documento pero se han utilizado.
+
+```{r eval = FALSE, echo = FALSE}
+# Se muestran los gráficos: atributos frente al clusterid
+DrawNumericplotFactorhistogramAgainstargetAllColumns(studentMat, "clusterid", datasettitle = "matemáticas")
+```
+```{r eval = FALSE, echo = FALSE}
+# Se muestran los graficos atributos frente al clusterid
+DrawNumericplotFactorhistogramAgainstargetAllColumns(studentPor, "clusterid", datasettitle = "portugués")
+```
+```{r echo = FALSE}
+# Se elimina el clusterid ya que no se necesita
+studentMat$clusterid <- NULL
+studentPor$clusterid <- NULL
+```
+
+#### 3.1.1. Matemáticas {#kmeansmat}
+###### [\^](#kmeans)
+
+* Cluster 4:
+    + Lo más destacable de este conjunto es su nota final **G3**: 0.12
+    + Aunque prácticamente ninguno aprobó en ninguna de las notas G1, G2, G3, los valores de éstas han ido disminuyendo significativamente.
+    + Un dato interesante es que casi no han faltado a clase **absences**. Por lo que la hipótesis de que abandonaron la escuela no es factible.
+    + La gran mayoría no va a clases extra de matimaticas **paid**.
+    + Por otra parte la educación de sus padres (**Medu** y **Fedu**) es la más baja todos y un gran número viven juntos **Pstatus**.
+* Cluster 1:
+    + Lo más característico de este cluster es el número de instancias: solo 5.
+    + La nota **G3** es muy parecida al cluster 3 y al 5.
+    + Todos ellos tienen **internet** y pertenecen al colegio GP.
+    + El número de ausencias es muy alto **absences**.
+* Cluster 2:
+    + Es el grupo con mayor nota **G3** y el único en el que el valor de todas las observaciones es mayor que 10, incluidos **G1** y **G2**.
+    + La gran mayoría desean cursar estudios superiores **higher** y no tienen apoyo extra escolar **schoolsup**.
+    + Casi ninguno suspende otras asignaturas.
+    + La educación de los padres **Fedu** y **Medu** es la mayor de todos los grupos.
+    + Es donde más personas del sexo masculino hay **sex**.
+* Cluster 3:
+    + El valor de **G3** es alrededor del 9 y 10.
+    + La gran mayoría desean cursar estudios superiores **higher**.
+    + Casi ninguno suspende otras asignaturas **failures**.
+* Cluster 5:
+    + Al igual que en el cluster 4, el valor de **G3** es alrededor del 9 y 10 pero la dispersión de los valores es mucho mayor.
+    + El número de ausencias **absences** es muy alto, el segundo de todos los clusters.
+    + Muchos desean cursar estudios superiores **higher** pero en menor proporcion que en el cluster 3.
+
+#### 3.1.2. Portugués {#kmeanspor}
+###### [\^](#kmeans)
+
+* Cluster 3:
+    + Es el grupo con mayor nota **G3** y el único en los que todos es mayor que 10 en todas las notas incluidos **G1** y **G2**.
+    + En todos los clusters excepto en el 4 las notas (G1, G2, G3) van aumentando.
+    + Todos desean cursar estudios superiores **higher**.
+    + Prácticamente ninguno suspende otras asignaturas.
+    + La educación de los padres **Fedu** y **Medu** es la mayor de todos los grupos. 
+* Cluster 4:
+    + Es el único grupo en el que el centroide es menor que 10 en **G1**, **G2** y **G3**.
+    + Es el grupo donde los alumnos supenden más asignaturas **failures**.
+* Cluster 1:
+    + El valor del centroide en **G3** es la segunda mejor (12.2) estando los valores muy centrados, habiendo un único alumno por debajo del 10 (9).
+    + Muchos desean un cursar estudios superiores **higher**
+    + La gran mayoría vive con la familia junta **Pstatus**.
+    + El es grupo más joven **age**.
+* Cluster 2: 
+    + El valor del centroide **G3** está cerca del 11 pero la dispersión es muy grande siendo la nota más baja 5 y la más alta 17.
+    + El número de ausencias **absences** es bastante elevado, siendo el único que tiene alumnos con 11 o más.
+
+
+# <span style="text-decoration: underline; font-weight: bold;">4. Selección de variables y construcción de dos modelos supervisados</span> {#supervisados}
+###### [Ir a la introducción](#introduccion)       [<](#nosupervisados)       [>](#evaluacion)
+
+[4.1. Selección de variable](#seleccionvariables)    [4.2. Modelos supervisados](#modelossupervisados)
+
+
+Para este apartado se utilizará el paquete **caret**.
+
+## 4.1. Selección de variable {#seleccionvariables}
+###### [\^](#supervisados)
+
+Lo primero que se hace es dividir ambos dataset en dos grupos: training y test siendo la proporción 70/30. Para ello se utilizará createDataPartition y así asegurar que haya valores de target balanceados en ambos conjuntos.
+
+```{r traintest, eval = TRUE, echo = FALSE}
+set.seed(987)
+indexStudentMat <- createDataPartition(studentMat$G3, p=0.7, list=F) 
+trainStudentMat <- studentMat[indexStudentMat,] 
+testStudentMat <- studentMat[- indexStudentMat, ]
+
+set.seed(987)
+indexStudentPor <- createDataPartition(studentPor$G3, p=0.7, list=F) 
+trainStudentPor <- studentPor[indexStudentPor,] 
+testStudentPor <- studentPor[- indexStudentPor, ]
+```
+
+A continuación se buscan atributos en el training cuya varianza este muy cerca de 0 y no aportan valor al modelo ya que serían considerados como una constante:
+
+```{r nearzerovar, eval = TRUE, echo = FALSE}
+zeroVarTrainStudentMat <- nearZeroVar(trainStudentMat %>% select(- G3), saveMetrics=F)
+zeroVarTrainStudentPor <- nearZeroVar(trainStudentPor %>% select(- G3), saveMetrics=F)
+```
+
+En ambos datasets no hay ningun atributo con varianza nula por lo que no se elimina ninguna columna.
+
+El siguiente paso es eliminar aquellos atributos predictores que estén muy relacionados/correlados entre sí. Para ello:
+
+1. Se filtran los dataset train para obtener únicamente los atributos numéricos
+2. Con este nuevo subset, se obtiene la matriz de correlación entre los predictores
+3. Con la ayuda de la función findCorrelation, se buscan las correlaciones cuyo valor sea mayor que 0.8 y se obtienen los índices de las columnas correladas de estos subsets
+4. No se puede aplicar directamente este índice para eliminar las columnas en los datasets con todos los atributos ya que estas columnas podrian tener distinto indice (se recuerda que en el primer paso se filtraron sólo las variables continuas para crear la matriz de correlación). Por este motivo, se tiene que obtener el nombre de las columnas en los subsets.
+5. Se itera sobre estos nombres de columnas y se eliminan de los dataset originales: training y test
+
+```{r eliminarpredictorescorrelados, echo = FALSE, message = FALSE, warning = FALSE, error = FALSE, results = 'hide'}
+# Se seleccionan solo las columnas numéricas en el training y se aplica la matriz de correlación entre los predictores
+trainStudentMatOnlyNumeric <- GetOnlyNumericOrFactorColumns(trainStudentMat)
+corTrainStudentMatOnlyNumeric <- cor(trainStudentMatOnlyNumeric %>% select(- G3))
+# Ahora se busca las correlaciones más fuertes y se obtienen los nombres de estas columnas ya que no se puede aplicar directamente al conjunto de training ni test con todas las columnas
+corTrainStudentMatOnlyNumericIndex <- findCorrelation(corTrainStudentMatOnlyNumeric, 0.80)
+colnamesDeleteStudentMat <- colnames(trainStudentMatOnlyNumeric)[corTrainStudentMatOnlyNumericIndex]
+# Se eliminan las columnas que están correladas
+corTrainStudentMat <- trainStudentMat
+corTestStudentMat <- testStudentMat
+lapply(colnamesDeleteStudentMat, function (colName) {
+  corTrainStudentMat[, colName] <<- NULL
+  corTestStudentMat[, colName] <<- NULL
+})
+
+# Se hace lo mismo para portugués:
+trainStudentPorOnlyNumeric <- GetOnlyNumericOrFactorColumns(trainStudentPor)
+corTrainStudentPorOnlyNumeric <- cor(trainStudentPorOnlyNumeric %>% select(- G3))
+corTrainStudentPorOnlyNumericIndex <- findCorrelation(corTrainStudentPorOnlyNumeric, 0.80)
+colnamesDeleteStudentPor <- colnames(trainStudentPorOnlyNumeric)[corTrainStudentPorOnlyNumericIndex]
+corTrainStudentPor <- trainStudentPor
+corTestStudentPor <- testStudentPor
+lapply(colnamesDeleteStudentPor, function (colName) {
+  corTrainStudentPor[, colName] <<- NULL
+  corTestStudentPor[, colName] <<- NULL
+})
+```
+
+Se obtienen:
+
+* Matemáticas: ```r length(colnamesDeleteStudentMat)``` atributos correlados (```r colnamesDeleteStudentMat```) los cuales se eliminan.
+* Portugués: ```r length(colnamesDeleteStudentPor)``` atributos correlados (```r colnamesDeleteStudentPor```) los cuales se eliminan.
+
+Por último se centran y se escalan las variables predictoras para reducir la desviación con la función: se utiliza la función preProcess y se aplica a cada uno de los datasets (training y test).
+
+```{r centraryescalar, eval = TRUE, echo = FALSE}
+# Se obtiene las operaciones que se tiene que hacer excepto el target
+xTransStudentMat <- preProcess(corTrainStudentMat %>% select(- G3))
+# Se modifican las variables del training
+corTrainStudentMatPrep <- predict(xTransStudentMat, corTrainStudentMat %>% select(- G3))
+corTrainStudentMatPrep$G3 <- corTrainStudentMat$G3
+# Se modifican las variables del test
+corTestStudentMatPrep <- predict(xTransStudentMat, corTestStudentMat %>% select(- G3))
+corTestStudentMatPrep$G3 <- corTestStudentMat$G3
+
+# Se hace lo mismo para portugués
+xTransStudentPor <- preProcess(corTrainStudentPor %>% select(- G3))
+corTestStudentPorPrep <- predict(xTransStudentPor, corTestStudentPor %>% select(- G3))
+corTestStudentPorPrep$G3 <- corTestStudentPor$G3
+xTransStudentPor <- preProcess(corTrainStudentPor %>% select(- G3))
+corTrainStudentPorPrep <- predict(xTransStudentPor, corTrainStudentPor %>% select(- G3))
+corTrainStudentPorPrep$G3 <- corTrainStudentPor$G3
+```
+
+## 4.2. Modelos supervisados {#modelossupervisados}
+###### [\^](#supervisados)
+
+[4.2.1. Regresión Lineal Multivariable](#rlm)    [4.2.2. Random Forest](#randomforest)
+
+
+En esta seccion se crearán dos modelos supervisados de predicción. Más concretamente se utilizará **Regresion Lineal Multivariable** y **Random Forest** a través del paquete caret. Además, se utilizará Cross Validation con 10 folds.
+
+#### 4.2.1. Regresión Lineal Multivariable {#rlm}
+###### [\^](#modelossupervisados)
+
+Se crea el modelo para los dos datasets de training (matemáticas y portugués):
+
+```{r lmcreacionmodelo1, echo = FALSE, message = FALSE, warning = FALSE, error = FALSE, results = 'hide'}
+fitControl <- trainControl(method = "cv", repeats = 10)
+
+lmModelCaretMat <- train(G3 ~ . , data = corTrainStudentMatPrep, method = "lm", trControl = fitControl)
+lmModelCaretPor <- train(G3 ~ . , data = corTrainStudentPorPrep, method = "lm", trControl = fitControl)
+```
+
+A continuación se muestra el summary de los dos modelos creados:
+
+```{r lmsummary, eval = TRUE, echo = FALSE}
+summary(lmModelCaretMat)
+summary(lmModelCaretPor)
+```
+
+* Matemáticas:
+    + RMSE es ```r lmModelCaretMat$results$RMSE``` y R^2^ es ```r lmModelCaretMat$results$Rsquared```. Recordemos que cuanto menor sea el RMSE y R^2^ más se acerque a 1, mejor es el modelo.
+    + Se puede observar que, como se ha visto en la teoría, se crean variables dummy para los atributos categóricos: tantos como el número de valores distintos - 1.
+    + Las variables que más aportan al modelo son: Intercept, G1 (este resultado se esperaba), si tiene una relación romantica (romanticyes), edad (age), apoyo extra en la escuela (schoolsupyes), ausencias (absences) y consumo de alcohol durante el fin de semana (Walc).
+
+* Portugués:
+    + RMSE es ```r lmModelCaretPor$results$RMSE``` y R^2^ es ```r lmModelCaretPor$results$Rsquared```
+    + Por lo tanto este modelo se ajusta mejor que en matemáticas en el conjunto de training. Veremos en el de test.
+    + Las variables que más aportan al modelo son: Intercept, G1, número de asignaturas suspensas (failures), edad (age), si la madre trabaja en el sector servicios (Fjobservices) y si la razón por la que se eligió es otra (reasonother).
+
+El siguiente paso es predecir el valor target en el conjunto de test. Empezaremos con matemáticas:
+
+```{r lmpredictmat1, echo = FALSE, message = FALSE, warning = FALSE, error = FALSE, results = 'hold'}
+# Se predice los valores con el test de matemáticas
+lmModelCaretMatPredict <- predict(lmModelCaretMat, newdata = corTestStudentMatPrep)
+# Se crea un dataframe con el G3 real y el G3 predict
+corTestStudentMatPrepWithPredictLm <- corTestStudentMatPrep
+corTestStudentMatPrepWithPredictLm$G3predict <- lmModelCaretMatPredict
+testValuesLmMat <- data.frame(obs = corTestStudentMatPrepWithPredictLm$G3, pred = corTestStudentMatPrepWithPredictLm$G3predict)
+# Se obtiene las medidas caracteristicas
+metricsLmMat <- defaultSummary(testValuesLmMat)
+metricsLmMat
+```
+```{r lmpredictmat2, echo = FALSE, message = FALSE, warning = FALSE, error = FALSE, results = 'hold'}
+# Se crea el grafico G3 real frente al predicho
+ggplot(data = corTestStudentMatPrepWithPredictLm, aes(G3, G3predict)) + 
+  geom_point() +
+  geom_abline(intercept = 0, slope = 1) + 
+  ggtitle("Fig Matemáticas G3 frente predicción G3 con el modelo Regresión Lineal Multivariable") +
+  xlab("G3 real") + 
+  ylab("G3 predicho")
+```
+
+El RMSE en el conjunto de test es ```r metricsLmMat[1]``` y el R^2^ es ```r metricsLmMat[2]```. Se puede ver que RMSE no es muy bueno. El modelo ideal sería aquel donde todos los puntos (G3 frente G3 predicho) estuviesen en la linea (G3 es igual a G3 predicho); visualmente se ve que esto no es así y se comete bastante error.
+
+A continuación hacemos el mismo proceso para el portugués, aunque no se muestre el plot:
+
+```{r lmpredictpor1, echo = FALSE, message = FALSE, warning = FALSE, error = FALSE, results = 'hold'}
+# Se predice los valores con el test de portugués
+lmModelCaretPorPredict <- predict(lmModelCaretPor, newdata = corTestStudentPorPrep)
+# Se crea un dataframe con el G3 real y el G3 predict
+corTestStudentPorPrepWithPredictLm <- corTestStudentPorPrep
+corTestStudentPorPrepWithPredictLm$G3predict <- lmModelCaretPorPredict
+testValuesLmPor <- data.frame(obs = corTestStudentPorPrepWithPredictLm$G3, pred = corTestStudentPorPrepWithPredictLm$G3predict)
+# Se obtiene las medidas caracteristicas
+metricsLmPor <- defaultSummary(testValuesLmPor)
+metricsLmPor
+```
+```{r lmpredictpor2, echo = FALSE, message = FALSE, warning = FALSE, error = FALSE, eval = FALSE}
+# Se crea el grafico G3 real frente al predicho
+ggplot(data = corTestStudentPorPrepWithPredictLm, aes(G3, G3predict)) + 
+  geom_point() +
+  geom_abline(intercept = 0, slope = 1) + 
+  ggtitle("Fig Portugués G3 frente predicción G3 con el modelo Regresión Lineal Multivariable") +
+  xlab("G3 real") + 
+  ylab("G3 predicho")
+```
+
+En este caso RMSE es ```r metricsLmPor[1]``` y el R^2^ es ```r metricsLmPor[2]```, por lo que este modelo, de nuevo, se adapta mejor a la asignatura de portugués que de matemáticas.
+
+
+#### 4.2.2. Random Forest {#randomforest}
+###### [\^](#modelossupervisados)
+
+Se crea el modelo para los dos datasets de training (matemáticas y portugués):
+
+```{r rfcreacionmodelo, echo = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+tunegrid <- expand.grid(mtry = c(1))
+
+rfModelCaretMat <- train(G3 ~ . , data = corTrainStudentMatPrep, method = "rf", trControl = fitControl, tuneGrid = tunegrid)
+rfModelCaretPor <- train(G3 ~ . , data = corTrainStudentPorPrep, method = "rf", trControl = fitControl, tuneGrid = tunegrid)
+```
+
+A continuación se muestra el summary de los dos modelos creados:
+
+```{r rfsummary1, eval = TRUE, echo = FALSE, warning = FALSE, error = FALSE}
+print(rfModelCaretMat)
+print(rfModelCaretPor)
+```
+```{r rfsummary2, eval = FALSE, echo = FALSE, warning = FALSE, error = FALSE}
+plot(rfModelCaretMat$finalModel, main = "Fig Numero de arboles en Matemáticas usando Random Forest frente al error")
+plot(rfModelCaretPor$finalModel, main = "Fig Numero de arboles en Portugués usando Random Forest frente al error")
+```
+
+* Matemáticas:
+    + RMSE es ```r rfModelCaretMat$results$RMSE``` y R^2^ es ```r rfModelCaretMat$results$Rsquared```
+
+* Portugués:
+    + RMSE es ```r rfModelCaretPor$results$RMSE``` y R^2^ es ```r rfModelCaretPor$results$Rsquared```
+    + En este caso también se obtiene menor error de predicción en el conjunto de training que en matemáticas. Puede influir que se tengan más observaciones en portugués que en matemáticas.
+    
+Ahora vamos a ver como de bien predicen con los conjuntos de test. Empezamos con matemáticas:
+
+```{r rfpredictmat1, eval = TRUE, echo = FALSE, warning = FALSE, error = FALSE}
+# Se predice los valores con el test
+rfModelCaretMatPredict <- predict(rfModelCaretMat, newdata = corTestStudentMatPrep)
+# Se crea un dataframe con el G3 real y el G3 predict
+corTestStudentMatPrepWithPredictRf <- corTestStudentMatPrep
+corTestStudentMatPrepWithPredictRf$G3predict <- rfModelCaretMatPredict
+testValuesRfMat <- data.frame(obs = corTestStudentMatPrepWithPredictRf$G3, pred = corTestStudentMatPrepWithPredictRf$G3predict)
+# Se obtiene las medidas caracteristicas
+metricsRfMat <- defaultSummary(testValuesRfMat)
+metricsRfMat
+```
+```{r rfpredictmat2, eval = TRUE, echo = FALSE, warning = FALSE, error = FALSE}
+# Se crea el grafico G3 real frente al predicho
+ggplot(data = corTestStudentMatPrepWithPredictRf, aes(G3, G3predict)) + 
+  geom_point() +
+  geom_abline(intercept = 0, slope = 1) + 
+  ggtitle("Fig Matemáticas G3 frente predicción G3 con el modelo Random Forest") +
+  xlab("G3 real") + 
+  ylab("G3 predicho")
+```
+
+Como se observa en el gráfico, este modelo predice muy mal la nota para matemáticas: los valores ni se ajustan a la recta ideal. Numéricamente se represanta como RMSE ```r metricsRfMat[1]``` y R^2^ ```r metricsRfMat[2]```. Si se comparan esto valores con los de training, se observa que incluso son mejores los de test.
+
+Ahora predecimos las notas de portugués:
+
+```{r rfpredictpor1, eval = TRUE, echo = FALSE, warning = FALSE, error = FALSE}
+# Se predice los valores con el test
+rfModelCaretPorPredict <- predict(rfModelCaretPor, newdata = corTestStudentPorPrep)
+# Se crea un dataframe con el G3 real y el G3 predict
+corTestStudentPorPrepWithPredictRf <- corTestStudentPorPrep
+corTestStudentPorPrepWithPredictRf$G3predict <- rfModelCaretPorPredict
+testValuesRfPor <- data.frame(obs = corTestStudentPorPrepWithPredictRf$G3, pred = corTestStudentPorPrepWithPredictRf$G3predict)
+# Se obtiene las medidas caracteristicas
+metricsRfPor <- defaultSummary(testValuesRfPor)
+metricsRfPor
+```
+```{r rfpredictpor2, eval = FALSE, echo = FALSE, warning = FALSE, error = FALSE}
+# Se crea el grafico G3 real frente al predicho
+ggplot(data = corTestStudentPorPrepWithPredictRf, aes(G3, G3predict)) + 
+  geom_point() +
+  geom_abline(intercept = 0, slope = 1) + 
+  ggtitle("Fig Portugués G3 frente predicción G3 con el modelo Random Forest") +
+  xlab("G3 real") + 
+  ylab("G3 predicho")
+```
+
+Si se representa gráficamente (descomentar ggplot) se puede observar que la predicción no es tampoco buena, aunque no es tan mala como con matemáticas. Lo más llamativo es que muchas notas con valor 0 en el G3 real, el G3 predicho es mayor que 10. De nuevo, numéricamente se represanta como RMSE ```r metricsRfPor[1]``` y R^2^ ```r metricsRfPor[2]```.
+
+# <span style="text-decoration: underline; font-weight: bold;">5. Evaluación y comparación de modelos supervisados</span> {#evaluacion}
+###### [Ir a la introducción](#introduccion)       [<](#supervisados)
+
+Primeramente se comparan los modelos generados para el dataset de matemáticas. Para ello se utiliza la funcion resamples:
+
+```{r compararmodelosmat1, echo = FALSE, warning = FALSE, error = FALSE}
+regModelsMat <- list(lmModelCaretMat, rfModelCaretMat)
+comparRegModelsMat <- resamples(regModelsMat)
+summary(comparRegModelsMat)
+```
+```{r compararmodelosmat2, echo = FALSE, warning = FALSE, error = FALSE}
+# Se crea el gráfico con la recta con la predicción ideal y con las observaciones (G3 frente G3 predicho) de los dos modelos
+valueG3G3predichoMatLm <- data.frame(G3 = corTestStudentMatPrepWithPredictLm %>% select(G3), G3predict = corTestStudentMatPrepWithPredictLm %>% select(G3predict), algoritmo = "Regresión Lineal Multivariable")
+valueG3G3predichoMatRf <- data.frame(G3 = corTestStudentMatPrepWithPredictRf %>% select(G3), G3predict = corTestStudentMatPrepWithPredictRf %>% select(G3predict), algoritmo = "Ramdon Forest")
+valueG3G3predictMatLmRf <- rbind(valueG3G3predichoMatLm, valueG3G3predichoMatRf)
+
+ggplot(valueG3G3predictMatLmRf, aes(x = G3, y = G3predict, colour = algoritmo, shape=algoritmo)) + 
+  geom_point() +
+  geom_abline(intercept = 0, slope = 1) + 
+  ggtitle("Fig Comparacion Matemáticas G3 frente predicción G3 con los dos modelos conjunto test") +
+  xlab("G3 real") + 
+  ylab("G3 predicho") +
+  scale_colour_manual(labels = c("Regresión Lineal Multivariable", "Ramdon Forest"), values = c("black", "red")) +
+  scale_shape_manual(labels = c("Regresión Lineal Multivariable", "Ramdon Forest"), values = c(19, 0))
+```
+```{r eval = TRUE, echo = FALSE, warning = FALSE, error = FALSE}
+# Esta variables se utilizan sólo para mostrar sus valores en rmarkdown
+rmseModelo1Mat <- sum(comparRegModelsMat$values$`Model1~RMSE`)/length(comparRegModelsMat$values$`Model1~RMSE`)
+rsquaredModelo1Mat <- sum(comparRegModelsMat$values$`Model1~Rsquared`)/length(comparRegModelsMat$values$`Model1~Rsquared`)
+rmseModelo2Mat <- sum(comparRegModelsMat$values$`Model2~RMSE`)/length(comparRegModelsMat$values$`Model2~RMSE`)
+rsquaredModelo2Mat <- sum(comparRegModelsMat$values$`Model2~Rsquared`)/length(comparRegModelsMat$values$`Model2~Rsquared`)
+```
+
+En el gráfico se puede observar perfectamente la diferencia de predicción de los modelos donde los círculos negros son los valores G3~G3 predicho con Regresión Lineal Multivariable y los cuadrados rojos con Ramdon Forest. Los datos utilizados son los del test:
+
+* Utilizando caret: RMSE media para Regresión Lineal Multivariable es ```r rmseModelo1Mat``` y R^2^ medio de ```r rsquaredModelo1Mat```
+* Utilizando caret: RMSE media para Ramdon Forest es ```r rmseModelo2Mat``` y R^2^ medio de ```r rsquaredModelo2Mat```
+* Utilizando conjunto de test: RMSE media para Regresión Lineal Multivariable es ```r metricsLmMat[1]``` y R^2^ medio de ```r metricsLmMat[2]```
+* Utilizando conjunto de test: RMSE media para Ramdon Forest es ```r metricsRfMat[1]``` y R^2^ medio de ```r metricsRfMat[2]```
+
+Vamos a ver ahora con el dataset de portugués:
+
+```{r compararmodelospor1, eval = TRUE, echo = FALSE, warning = FALSE, error = FALSE}
+regModelsPor <- list(lmModelCaretPor, rfModelCaretPor)
+comparRegModelsPor <- resamples(regModelsPor)
+summary(comparRegModelsPor)
+```
+```{r compararmodelospor2, eval = TRUE, echo = FALSE, warning = FALSE, error = FALSE}
+# Se crea el gráfico con la recta con la predicción ideal y con las observaciones (G3 frente G3 predicho) de los dos modelos
+valueG3G3predichoPorLm <- data.frame(G3 = corTestStudentPorPrepWithPredictLm %>% select(G3), G3predict = corTestStudentPorPrepWithPredictLm %>% select(G3predict), algoritmo = "Regresión Lineal Multivariable")
+valueG3G3predichoPorRf <- data.frame(G3 = corTestStudentPorPrepWithPredictRf %>% select(G3), G3predict = corTestStudentPorPrepWithPredictRf %>% select(G3predict), algoritmo = "Ramdon Forest")
+valueG3G3predictPorLmRf <- rbind(valueG3G3predichoPorLm, valueG3G3predichoPorRf)
+
+ggplot(valueG3G3predictPorLmRf, aes(x = G3, y = G3predict, colour = algoritmo, shape=algoritmo)) + 
+  geom_point() +
+  geom_abline(intercept = 0, slope = 1) + 
+  ggtitle("Fig Comparacion Portugués G3 frente predicción G3 con los dos modelos conjunto test") +
+  xlab("G3 real") + 
+  ylab("G3 predicho") +
+  scale_colour_manual(labels = c("Regresión Lineal Multivariable", "Ramdon Forest"), values = c("black", "red")) +
+  scale_shape_manual(labels = c("Regresión Lineal Multivariable", "Ramdon Forest"), values = c(19, 0))
+```
+```{r eval = TRUE, echo = FALSE, warning = FALSE, error = FALSE}
+# Esta variables se utilizan sólo para mostrar sus valores en rmarkdown
+rmseModelo1Por <- sum(comparRegModelsPor$values$`Model1~RMSE`)/length(comparRegModelsPor$values$`Model1~RMSE`)
+rsquaredModelo1Por <- sum(comparRegModelsPor$values$`Model1~Rsquared`)/length(comparRegModelsPor$values$`Model1~Rsquared`)
+rmseModelo2Por <- sum(comparRegModelsPor$values$`Model2~RMSE`)/length(comparRegModelsPor$values$`Model2~RMSE`)
+rsquaredModelo2Por <- sum(comparRegModelsPor$values$`Model2~Rsquared`)/length(comparRegModelsPor$values$`Model2~Rsquared`)
+```
+
+Al igual que con matemáticas, se observa gráficamente que el que mejor predice es Regresión Lineal Multivariable (círculos negros) con bastante distancia respecto a Ramdon Forest (cuadrados rojos) con los datos de test. No obstante este Ramdon Forest predice mejor que en matemáticas donde se puede catalogar como penoso:
+
+* Utilizando caret: RMSE media para Regresion Lineal Multivariable es ```r rmseModelo1Por``` y R^2^ medio de ```r rsquaredModelo1Por```
+* Utilizando caret: RMSE media para Ramdon Forest es ```r rmseModelo2Por``` y R^2^ medio de ```r rsquaredModelo2Por```
+* Utilizando conjunto de test: RMSE media para Regresion Lineal Multivariable es ```r metricsLmMat[1]``` y R^2^ medio de ```r metricsLmMat[2]```
+* Utilizando conjunto de test: RMSE media para Ramdon Forest es ```r metricsRfPor[1]``` y R^2^ medio de ```r metricsRfPor[2]```
+
+Como se vio en teoría, los árboles no predicen tan bien como la regresión lineal.
